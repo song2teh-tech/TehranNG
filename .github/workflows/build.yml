@@ -52,13 +52,20 @@ jobs:
         echo "android.useAndroidX=true" >> V2rayNG/gradle.properties
         echo "android.enableJetifier=true" >> V2rayNG/gradle.properties
 
-    # ✅ لینک دانلود هسته به‌روزرسانی شد تا با کدهای کاتلین سازگار باشد
+    # ✅ لینک دانلود اصلاح شد و به منبع رسمی و پایدار متصل شد
     - name: Download Compatible libv2ray.aar
       run: |
         mkdir -p V2rayNG/app/libs
-        curl -L -o V2rayNG/app/libs/libv2ray.aar "https://raw.githubusercontent.com/2dust/v2rayNG/master/V2rayNG/app/libs/libv2ray.aar"
+        # استفاده از لینک پایدار SourceForge که همیشه آخرین نسخه را برمی‌گرداند
+        curl -L -o V2rayNG/app/libs/libv2ray.aar "https://sourceforge.net/projects/androidlibxraylite.mirror/files/latest/download/libv2ray.aar"
+        
+        # بررسی امنیتی: اطمینان از اینکه فایل واقعاً دانلود شده و یک صفحه HTML نیست
         FILE_SIZE=$(stat -c%s "V2rayNG/app/libs/libv2ray.aar")
-        if [ "$FILE_SIZE" -lt 1000000 ]; then echo "Error: file too small"; exit 1; fi
+        if [ "$FILE_SIZE" -lt 1000000 ]; then 
+          echo "Error: Downloaded file is too small (${FILE_SIZE} bytes). The link may be broken or pointing to an error page."
+          exit 1
+        fi
+        echo "Download successful. File size: ${FILE_SIZE} bytes"
 
     - name: Build APK
       run: |
