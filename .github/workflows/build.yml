@@ -20,7 +20,6 @@ jobs:
     - name: Download and Process Icons
       run: |
         curl -L -o milad_tower.png "https://commons.wikimedia.org/wiki/Special:FilePath/Arian_sadri_milad_tower.png"
-        
         declare -A sizes=( ["mdpi"]=48 ["hdpi"]=72 ["xhdpi"]=96 ["xxhdpi"]=144 ["xxxhdpi"]=192 )
         for density in "${!sizes[@]}"; do
           size=${sizes[$density]}
@@ -45,15 +44,21 @@ jobs:
         find V2rayNG -type f -name "colors.xml" -exec sed -i 's/<color name="colorPrimaryDark">.*<\/color>/<color name="colorPrimaryDark">#020C1B<\/color>/g' {} +
         find V2rayNG -type f -name "colors.xml" -exec sed -i 's/<color name="colorAccent">.*<\/color>/<color name="colorAccent">#64FFDA<\/color>/g' {} +
         
-        # اصلاح خطای Multiple substitutions با استفاده از perl (جایگزینی امن)
+        # اصلاح خطای Multiple substitutions با استفاده از perl
         find V2rayNG -type f -name "strings.xml" -exec perl -pi -e 's/%(?!%|\d+\$)/%%/g' {} +
+
+    # ✅ مرحله جدید: فعال‌سازی AndroidX و Jetifier برای رفع تداخل کتابخانه‌ها
+    - name: Enable AndroidX and Jetifier
+      run: |
+        echo "android.useAndroidX=true" >> V2rayNG/gradle.properties
+        echo "android.enableJetifier=true" >> V2rayNG/gradle.properties
+        echo "--- gradle.properties content ---"
+        cat V2rayNG/gradle.properties
 
     - name: Download libv2ray.aar (Direct from raw.githubusercontent)
       run: |
         mkdir -p V2rayNG/app/libs
-        # استفاده از لینک خام و پایدار از مخزن v2rayNG
         curl -L -o V2rayNG/app/libs/libv2ray.aar "https://raw.githubusercontent.com/2dust/v2rayNG/09d854dc784365e5499e444aff065055adcc5105/V2rayNG/app/libs/libv2ray.aar"
-        # بررسی حجم فایل برای اطمینان از دانلود صحیح
         FILE_SIZE=$(stat -c%s "V2rayNG/app/libs/libv2ray.aar")
         if [ "$FILE_SIZE" -lt 1000000 ]; then
           echo "Error: Downloaded libv2ray.aar is too small (${FILE_SIZE} bytes)."
