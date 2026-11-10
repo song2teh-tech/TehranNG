@@ -37,14 +37,11 @@ jobs:
         find V2rayNG -type f -name "colors.xml" -exec sed -i 's/<color name="colorAccent">.*<\/color>/<color name="colorAccent">#64FFDA<\/color>/g' {} +
         find V2rayNG -type f -name "strings.xml" -exec perl -pi -e 's/%(?!%|\d+\$)/%%/g' {} +
 
-    # ✅ اصلاح نهایی: تزریق صحیح مخزن JitPack با سینتکس Kotlin DSL
+    # ✅ اصلاح نهایی: تزریق دقیق و امن مخزن JitPack به فایل settings.gradle.kts
     - name: Add JitPack Repository (Kotlin DSL)
       run: |
-        for file in $(find V2rayNG -name "settings.gradle.kts"); do
-          echo "Processing $file"
-          # استفاده از perl برای پیدا کردن بلوک dependencyResolutionManagement و اضافه کردن JitPack
-          perl -0pi -e 's/(dependencyResolutionManagement\s*\{\s*repositoriesMode\.set\(RepositoriesMode\.FAIL_ON_PROJECT_REPOS\)\s*repositories\s*\{)/$1\n        maven { url = uri("https:\/\/jitpack.io") }/g' "$file"
-        done
+        # پیدا کردن تمام فایل‌های settings.gradle.kts و تزریق مخزن در بلوک repositories
+        find V2rayNG -name "settings.gradle.kts" -exec perl -0pi -e 's/(repositories\s*\{)/$1\n        maven { url = uri("https:\/\/jitpack.io") }/g' {} +
 
     - name: Enable AndroidX and Jetifier
       run: |
