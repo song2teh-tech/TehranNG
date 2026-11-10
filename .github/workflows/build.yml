@@ -29,22 +29,22 @@ jobs:
     - name: Remove Duplicate WebP Icons
       run: find V2rayNG/app/src/main/res -name "ic_launcher.webp" -delete
 
-    - name: Enable JitPack Repository
-      run: |
-        # پیدا کردن فایل settings.gradle و اضافه کردن JitPack به مخازن
-        find V2rayNG -name "settings.gradle*" -exec sed -i '/dependencyResolutionManagement {/a \        repositories { maven { url "https://jitpack.io" } }' {} + || \
-        echo "settings.gradle not found, trying build.gradle..." && find V2rayNG -name "build.gradle*" -exec sed -i '/allprojects {/a \    repositories { maven { url "https://jitpack.io" } }' {} +
-
     - name: Auto Fix and Customize Code
       run: |
-        # ⚠️ خط مربوط به تغییر نسخه RxPermissions حذف شد تا از خطای Unresolved reference جلوگیری شود
-        
         find V2rayNG -type f -name "strings.xml" -exec sed -i 's|<string name="app_name">.*</string>|<string name="app_name">TehranNG</string>|g' {} +
-        
         find V2rayNG -type f -name "colors.xml" -exec sed -i 's/<color name="colorPrimary">.*<\/color>/<color name="colorPrimary">#0A192F<\/color>/g' {} +
         find V2rayNG -type f -name "colors.xml" -exec sed -i 's/<color name="colorPrimaryDark">.*<\/color>/<color name="colorPrimaryDark">#020C1B<\/color>/g' {} +
         find V2rayNG -type f -name "colors.xml" -exec sed -i 's/<color name="colorAccent">.*<\/color>/<color name="colorAccent">#64FFDA<\/color>/g' {} +
         find V2rayNG -type f -name "strings.xml" -exec perl -pi -e 's/%(?!%|\d+\$)/%%/g' {} +
+
+    # ✅ اصلاح نهایی: تزریق صحیح مخزن JitPack با سینتکس Kotlin DSL
+    - name: Add JitPack Repository (Kotlin DSL)
+      run: |
+        for file in $(find V2rayNG -name "settings.gradle.kts"); do
+          echo "Processing $file"
+          # استفاده از perl برای پیدا کردن بلوک dependencyResolutionManagement و اضافه کردن JitPack
+          perl -0pi -e 's/(dependencyResolutionManagement\s*\{\s*repositoriesMode\.set\(RepositoriesMode\.FAIL_ON_PROJECT_REPOS\)\s*repositories\s*\{)/$1\n        maven { url = uri("https:\/\/jitpack.io") }/g' "$file"
+        done
 
     - name: Enable AndroidX and Jetifier
       run: |
