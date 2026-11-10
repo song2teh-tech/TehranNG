@@ -19,10 +19,8 @@ jobs:
 
     - name: Download and Process Icons
       run: |
-        # دانلود مستقیم و پایدار عکس برج میلاد از ویکی‌مدیا
         curl -L -o milad_tower.png "https://commons.wikimedia.org/wiki/Special:FilePath/Arian_sadri_milad_tower.png"
         
-        # تولید آیکون‌ها در تمام سایزهای استاندارد اندروید
         declare -A sizes=( ["mdpi"]=48 ["hdpi"]=72 ["xhdpi"]=96 ["xxhdpi"]=144 ["xxxhdpi"]=192 )
         for density in "${!sizes[@]}"; do
           size=${sizes[$density]}
@@ -31,29 +29,37 @@ jobs:
 
     - name: Remove Duplicate WebP Icons
       run: |
-        # حذف فایل‌های webp تکراری برای جلوگیری از خطای Duplicate resources
         find V2rayNG/app/src/main/res -name "ic_launcher.webp" -delete
 
     - name: Auto Fix and Customize Code
       run: |
-        # اصلاح خطای کتابخانه RxPermissions
+        # اصلاح خطای RxPermissions
         find V2rayNG -type f -name "*.gradle*" -exec sed -i 's/com.github.tbruyelle:rxpermissions:0.12/com.github.tbruyelle:rxpermissions:0.10.2/g' {} +
         find V2rayNG -type f -name "*.toml" -exec sed -i 's/rxpermissions = "0.12"/rxpermissions = "0.10.2"/g' {} +
         
         # تغییر نام برنامه به TehranNG
         find V2rayNG -type f -name "strings.xml" -exec sed -i 's|<string name="app_name">.*</string>|<string name="app_name">TehranNG</string>|g' {} +
         
-        # تغییر رنگ‌ها به آبی نفتی و فیروزه‌ای
+        # تغییر رنگ‌ها
         find V2rayNG -type f -name "colors.xml" -exec sed -i 's/<color name="colorPrimary">.*<\/color>/<color name="colorPrimary">#0A192F<\/color>/g' {} +
         find V2rayNG -type f -name "colors.xml" -exec sed -i 's/<color name="colorPrimaryDark">.*<\/color>/<color name="colorPrimaryDark">#020C1B<\/color>/g' {} +
         find V2rayNG -type f -name "colors.xml" -exec sed -i 's/<color name="colorAccent">.*<\/color>/<color name="colorAccent">#64FFDA<\/color>/g' {} +
+        
+        # اصلاح خطای Multiple substitutions: تبدیل % به %% در رشته‌های دارای % (فقط در فایل‌های strings.xml)
+        # این دستور کاراکتر % را به %% تبدیل می‌کند مگر اینکه از قبل %% یا %1$s و... باشد
+        find V2rayNG -type f -name "strings.xml" -exec sed -i -E 's/%(?!%|[0-9]+\$)//g' {} +
 
-    - name: Download libv2ray.aar
+    - name: Download libv2ray.aar (Direct from raw.githubusercontent)
       run: |
-        # ایجاد پوشه در صورت عدم وجود
         mkdir -p V2rayNG/app/libs
-        # دانلود مستقیم فایل هسته از SourceForge
-        curl -L -o V2rayNG/app/libs/libv2ray.aar "https://sourceforge.net/projects/androidlibxraylite.mirror/files/v26.9.30/libv2ray.aar/download"
+        # استفاده از لینک خام و پایدار از مخزن v2rayNG
+        curl -L -o V2rayNG/app/libs/libv2ray.aar "https://raw.githubusercontent.com/2dust/v2rayNG/09d854dc784365e5499e444aff065055adcc5105/V2rayNG/app/libs/libv2ray.aar"
+        # بررسی حجم فایل برای اطمینان از دانلود صحیح (حداقل 1 مگابایت)
+        FILE_SIZE=$(stat -c%s "V2rayNG/app/libs/libv2ray.aar")
+        if [ "$FILE_SIZE" -lt 1000000 ]; then
+          echo "Error: Downloaded libv2ray.aar is too small (${FILE_SIZE} bytes). Possibly an HTML page."
+          exit 1
+        fi
         ls -lh V2rayNG/app/libs/
 
     - name: Build APK
