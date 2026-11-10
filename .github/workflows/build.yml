@@ -45,19 +45,18 @@ jobs:
         find V2rayNG -type f -name "colors.xml" -exec sed -i 's/<color name="colorPrimaryDark">.*<\/color>/<color name="colorPrimaryDark">#020C1B<\/color>/g' {} +
         find V2rayNG -type f -name "colors.xml" -exec sed -i 's/<color name="colorAccent">.*<\/color>/<color name="colorAccent">#64FFDA<\/color>/g' {} +
         
-        # اصلاح خطای Multiple substitutions: تبدیل % به %% در رشته‌های دارای % (فقط در فایل‌های strings.xml)
-        # این دستور کاراکتر % را به %% تبدیل می‌کند مگر اینکه از قبل %% یا %1$s و... باشد
-        find V2rayNG -type f -name "strings.xml" -exec sed -i -E 's/%(?!%|[0-9]+\$)//g' {} +
+        # اصلاح خطای Multiple substitutions با استفاده از perl (جایگزینی امن)
+        find V2rayNG -type f -name "strings.xml" -exec perl -pi -e 's/%(?!%|\d+\$)/%%/g' {} +
 
     - name: Download libv2ray.aar (Direct from raw.githubusercontent)
       run: |
         mkdir -p V2rayNG/app/libs
         # استفاده از لینک خام و پایدار از مخزن v2rayNG
         curl -L -o V2rayNG/app/libs/libv2ray.aar "https://raw.githubusercontent.com/2dust/v2rayNG/09d854dc784365e5499e444aff065055adcc5105/V2rayNG/app/libs/libv2ray.aar"
-        # بررسی حجم فایل برای اطمینان از دانلود صحیح (حداقل 1 مگابایت)
+        # بررسی حجم فایل برای اطمینان از دانلود صحیح
         FILE_SIZE=$(stat -c%s "V2rayNG/app/libs/libv2ray.aar")
         if [ "$FILE_SIZE" -lt 1000000 ]; then
-          echo "Error: Downloaded libv2ray.aar is too small (${FILE_SIZE} bytes). Possibly an HTML page."
+          echo "Error: Downloaded libv2ray.aar is too small (${FILE_SIZE} bytes)."
           exit 1
         fi
         ls -lh V2rayNG/app/libs/
