@@ -27,50 +27,43 @@ jobs:
         done
 
     - name: Remove Duplicate WebP Icons
+      run: find V2rayNG/app/src/main/res -name "ic_launcher.webp" -delete
+
+    - name: Enable JitPack Repository
       run: |
-        find V2rayNG/app/src/main/res -name "ic_launcher.webp" -delete
+        # پیدا کردن فایل settings.gradle و اضافه کردن JitPack به مخازن
+        find V2rayNG -name "settings.gradle*" -exec sed -i '/dependencyResolutionManagement {/a \        repositories { maven { url "https://jitpack.io" } }' {} + || \
+        echo "settings.gradle not found, trying build.gradle..." && find V2rayNG -name "build.gradle*" -exec sed -i '/allprojects {/a \    repositories { maven { url "https://jitpack.io" } }' {} +
 
     - name: Auto Fix and Customize Code
       run: |
-        # اصلاح خطای RxPermissions
-        find V2rayNG -type f -name "*.gradle*" -exec sed -i 's/com.github.tbruyelle:rxpermissions:0.12/com.github.tbruyelle:rxpermissions:0.10.2/g' {} +
-        find V2rayNG -type f -name "*.toml" -exec sed -i 's/rxpermissions = "0.12"/rxpermissions = "0.10.2"/g' {} +
+        # ⚠️ خط مربوط به تغییر نسخه RxPermissions حذف شد تا از خطای Unresolved reference جلوگیری شود
         
-        # تغییر نام برنامه به TehranNG
         find V2rayNG -type f -name "strings.xml" -exec sed -i 's|<string name="app_name">.*</string>|<string name="app_name">TehranNG</string>|g' {} +
         
-        # تغییر رنگ‌ها
         find V2rayNG -type f -name "colors.xml" -exec sed -i 's/<color name="colorPrimary">.*<\/color>/<color name="colorPrimary">#0A192F<\/color>/g' {} +
         find V2rayNG -type f -name "colors.xml" -exec sed -i 's/<color name="colorPrimaryDark">.*<\/color>/<color name="colorPrimaryDark">#020C1B<\/color>/g' {} +
         find V2rayNG -type f -name "colors.xml" -exec sed -i 's/<color name="colorAccent">.*<\/color>/<color name="colorAccent">#64FFDA<\/color>/g' {} +
-        
-        # اصلاح خطای Multiple substitutions با استفاده از perl
         find V2rayNG -type f -name "strings.xml" -exec perl -pi -e 's/%(?!%|\d+\$)/%%/g' {} +
 
-    # ✅ مرحله جدید: فعال‌سازی AndroidX و Jetifier برای رفع تداخل کتابخانه‌ها
     - name: Enable AndroidX and Jetifier
       run: |
         echo "android.useAndroidX=true" >> V2rayNG/gradle.properties
         echo "android.enableJetifier=true" >> V2rayNG/gradle.properties
-        echo "--- gradle.properties content ---"
-        cat V2rayNG/gradle.properties
 
-    - name: Download libv2ray.aar (Direct from raw.githubusercontent)
+    - name: Download libv2ray.aar
       run: |
         mkdir -p V2rayNG/app/libs
         curl -L -o V2rayNG/app/libs/libv2ray.aar "https://raw.githubusercontent.com/2dust/v2rayNG/09d854dc784365e5499e444aff065055adcc5105/V2rayNG/app/libs/libv2ray.aar"
         FILE_SIZE=$(stat -c%s "V2rayNG/app/libs/libv2ray.aar")
-        if [ "$FILE_SIZE" -lt 1000000 ]; then
-          echo "Error: Downloaded libv2ray.aar is too small (${FILE_SIZE} bytes)."
-          exit 1
-        fi
+        if [ "$FILE_SIZE" -lt 1000000 ]; then echo "Error: file too small"; exit 1; fi
         ls -lh V2rayNG/app/libs/
 
     - name: Build APK
       run: |
         cd V2rayNG
         chmod +x gradlew
-        ./gradlew assembleDebug
+        ./gradlew clean assembleDebug
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
