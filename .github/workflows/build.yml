@@ -31,21 +31,16 @@ jobs:
     - name: Remove Duplicate WebP Icons
       run: find V2rayNG/app/src/main/res -name "ic_launcher.webp" -delete
 
-    # ✅ ۱. اصلاح دقیق فایل libs.versions.toml: تغییر نام ماژول به RxPermissions
-    - name: Fix RxPermissions Name in Version Catalog
+    # ✅ ۱. اصلاح نهایی: اجبار به استفاده از نام بزرگ (RxPermissions) در فایل TOML
+    - name: Fix RxPermissions Alias in TOML
       run: |
         find V2rayNG -name "libs.versions.toml" -exec sed -i 's/module = "com.github.tbruyelle:rxpermissions"/module = "com.github.tbruyelle:RxPermissions"/g' {} +
-        echo "--- Verifying libs.versions.toml ---"
-        grep -n "rxpermissions" V2rayNG/gradle/libs.versions.toml || true
+        grep -n "RxPermissions" V2rayNG/gradle/libs.versions.toml || true
 
-    # ✅ ۲. اطمینان از وجود مخزن JitPack در فایل settings.gradle.kts
     - name: Ensure JitPack Repository is Added
       run: |
         find V2rayNG -name "settings.gradle.kts" -exec perl -0pi -e 's/(repositories\s*\{)/$1\n        maven { url = uri("https:\/\/jitpack.io") }/g' {} +
-        echo "--- Verifying settings.gradle.kts ---"
-        grep -n "jitpack" V2rayNG/settings.gradle.kts || true
 
-    # ✅ ۳. اعمال تغییرات ظاهری (نام، رنگ‌ها و رفع خطای %)
     - name: Auto Fix and Customize Code
       run: |
         find V2rayNG -type f -name "strings.xml" -exec sed -i 's|<string name="app_name">.*</string>|<string name="app_name">TehranNG</string>|g' {} +
@@ -59,7 +54,6 @@ jobs:
         echo "android.useAndroidX=true" >> V2rayNG/gradle.properties
         echo "android.enableJetifier=true" >> V2rayNG/gradle.properties
 
-    # ✅ ۴. دانلود هسته اصلی (libv2ray.aar)
     - name: Download libv2ray.aar
       run: |
         mkdir -p V2rayNG/app/libs
@@ -67,7 +61,6 @@ jobs:
         FILE_SIZE=$(stat -c%s "V2rayNG/app/libs/libv2ray.aar")
         if [ "$FILE_SIZE" -lt 1000000 ]; then echo "Error: file too small"; exit 1; fi
 
-    # ✅ ۵. ساخت APK با پاکسازی کش
     - name: Build APK
       run: |
         cd V2rayNG
