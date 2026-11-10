@@ -29,6 +29,11 @@ jobs:
           convert milad_tower.png -resize "${size}x${size}" "V2rayNG/app/src/main/res/mipmap-$density/ic_launcher.png"
         done
 
+    - name: Remove Duplicate WebP Icons
+      run: |
+        # حذف فایل‌های webp تکراری برای جلوگیری از خطای Duplicate resources
+        find V2rayNG/app/src/main/res -name "ic_launcher.webp" -delete
+
     - name: Auto Fix and Customize Code
       run: |
         # اصلاح خطای کتابخانه RxPermissions
