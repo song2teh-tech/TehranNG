@@ -7,6 +7,8 @@ jobs:
     steps:
     - name: Checkout Code
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
 
     - name: Set up JDK 17
       uses: actions/setup-java@v4
@@ -37,17 +39,12 @@ jobs:
         find V2rayNG -type f -name "colors.xml" -exec sed -i 's/<color name="colorAccent">.*<\/color>/<color name="colorAccent">#64FFDA<\/color>/g' {} +
         find V2rayNG -type f -name "strings.xml" -exec perl -pi -e 's/%(?!%|\d+\$)/%%/g' {} +
 
-    # ✅ اصلاح کلیدی: تغییر نام کتابخانه به RxPermissions (با حروف بزرگ)
-    - name: Fix RxPermissions Case Sensitivity
-      run: |
-        # اصلاح نام کتابخانه در فایل‌های Gradle
-        find V2rayNG -type f \( -name "*.gradle" -o -name "*.gradle.kts" -o -name "*.toml" \) -exec sed -i 's/com\.github\.tbruyelle:rxpermissions:/com.github.tbruyelle:RxPermissions:/g' {} +
-        echo "RxPermissions case fixed."
-
-    # ✅ اطمینان از وجود مخزن JitPack در فایل settings.gradle.kts
-    - name: Add JitPack Repository (Kotlin DSL)
+    # ✅ ۱. اصلاح نهایی و اجباری نام کتابخانه (حروف بزرگ) + اضافه کردن مخزن JitPack
+    - name: Fix JitPack and RxPermissions Case
       run: |
         find V2rayNG -name "settings.gradle.kts" -exec perl -0pi -e 's/(repositories\s*\{)/$1\n        maven { url = uri("https:\/\/jitpack.io") }/g' {} +
+        find V2rayNG -type f \( -name "*.gradle" -o -name "*.gradle.kts" -o -name "*.toml" \) -exec sed -i 's/com\.github\.tbruyelle:rxpermissions:/com.github.tbruyelle:RxPermissions:/g' {} +
+        find V2rayNG -type f \( -name "*.gradle" -o -name "*.gradle.kts" -o -name "*.toml" \) -exec sed -i 's/rxpermissions = "0.12"/RxPermissions = "0.12"/g' {} +
 
     - name: Enable AndroidX and Jetifier
       run: |
@@ -60,13 +57,13 @@ jobs:
         curl -L -o V2rayNG/app/libs/libv2ray.aar "https://raw.githubusercontent.com/2dust/v2rayNG/09d854dc784365e5499e444aff065055adcc5105/V2rayNG/app/libs/libv2ray.aar"
         FILE_SIZE=$(stat -c%s "V2rayNG/app/libs/libv2ray.aar")
         if [ "$FILE_SIZE" -lt 1000000 ]; then echo "Error: file too small"; exit 1; fi
-        ls -lh V2rayNG/app/libs/
 
+    # ✅ ۲. پاکسازی کش و ساخت بدون Daemon برای جلوگیری از خطاهای تکراری
     - name: Build APK
       run: |
         cd V2rayNG
         chmod +x gradlew
-        ./gradlew clean assembleDebug
+        ./gradlew clean assembleDebug --no-daemon
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
