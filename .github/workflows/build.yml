@@ -44,11 +44,12 @@ jobs:
         find V2rayNG -type f -name "colors.xml" -exec sed -i 's/<color name="colorAccent">.*<\/color>/<color name="colorAccent">#64FFDA<\/color>/g' {} +
 
     - name: Download libv2ray.aar
-      uses: robinraju/release-downloader@v1.12
-      with:
-        repository: '2dust/AndroidLibXrayLite'
-        fileName: 'libv2ray.aar'
-        out-file-path: 'V2rayNG/app/libs/'
+      run: |
+        # ایجاد پوشه در صورت عدم وجود
+        mkdir -p V2rayNG/app/libs
+        # دانلود مستقیم فایل هسته از SourceForge
+        curl -L -o V2rayNG/app/libs/libv2ray.aar "https://sourceforge.net/projects/androidlibxraylite.mirror/files/v26.9.30/libv2ray.aar/download"
+        ls -lh V2rayNG/app/libs/
 
     - name: Build APK
       run: |
