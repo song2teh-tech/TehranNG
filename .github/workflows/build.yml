@@ -31,11 +31,9 @@ jobs:
     - name: Remove Duplicate WebP Icons
       run: find V2rayNG/app/src/main/res -name "ic_launcher.webp" -delete
 
-    # ✅ ۱. اصلاح نهایی: اجبار به استفاده از نام بزرگ (RxPermissions) در فایل TOML
     - name: Fix RxPermissions Alias in TOML
       run: |
         find V2rayNG -name "libs.versions.toml" -exec sed -i 's/module = "com.github.tbruyelle:rxpermissions"/module = "com.github.tbruyelle:RxPermissions"/g' {} +
-        grep -n "RxPermissions" V2rayNG/gradle/libs.versions.toml || true
 
     - name: Ensure JitPack Repository is Added
       run: |
@@ -54,10 +52,11 @@ jobs:
         echo "android.useAndroidX=true" >> V2rayNG/gradle.properties
         echo "android.enableJetifier=true" >> V2rayNG/gradle.properties
 
-    - name: Download libv2ray.aar
+    # ✅ لینک دانلود هسته به‌روزرسانی شد تا با کدهای کاتلین سازگار باشد
+    - name: Download Compatible libv2ray.aar
       run: |
         mkdir -p V2rayNG/app/libs
-        curl -L -o V2rayNG/app/libs/libv2ray.aar "https://raw.githubusercontent.com/2dust/v2rayNG/09d854dc784365e5499e444aff065055adcc5105/V2rayNG/app/libs/libv2ray.aar"
+        curl -L -o V2rayNG/app/libs/libv2ray.aar "https://raw.githubusercontent.com/2dust/v2rayNG/master/V2rayNG/app/libs/libv2ray.aar"
         FILE_SIZE=$(stat -c%s "V2rayNG/app/libs/libv2ray.aar")
         if [ "$FILE_SIZE" -lt 1000000 ]; then echo "Error: file too small"; exit 1; fi
 
