@@ -1,4 +1,4 @@
-name: Auto Build & Customize APK
+name: Auto Build TehranNG APK
 on: [push, workflow_dispatch]
 
 jobs:
@@ -14,36 +14,40 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    # ۱. اصلاح خودکار کدها (تغییر نام، رنگ‌ها و رفع خطای کتابخانه)
+    - name: Install ImageMagick
+      run: sudo apt-get update && sudo apt-get install -y imagemagick
+
+    - name: Download and Process Icons
+      run: |
+        curl -L -o milad_tower.png "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Milad_Tower_in_Tehran.jpg/512px-Milad_Tower_in_Tehran.jpg"
+        declare -A sizes=( ["mdpi"]=48 ["hdpi"]=72 ["xhdpi"]=96 ["xxhdpi"]=144 ["xxxhdpi"]=192 )
+        for density in "${!sizes[@]}"; do
+          size=${sizes[$density]}
+          convert milad_tower.png -resize "${size}x${size}" "V2rayNG/app/src/main/res/mipmap-$density/ic_launcher.png"
+        done
+
     - name: Auto Fix and Customize Code
       run: |
-        echo "Fixing RxPermissions error..."
         find V2rayNG -type f -name "*.gradle*" -exec sed -i 's/com.github.tbruyelle:rxpermissions:0.12/com.github.tbruyelle:rxpermissions:0.10.2/g' {} +
         find V2rayNG -type f -name "*.toml" -exec sed -i 's/rxpermissions = "0.12"/rxpermissions = "0.10.2"/g' {} +
-        
-        echo "Changing App Name to TehranNG..."
         find V2rayNG -type f -name "strings.xml" -exec sed -i 's|<string name="app_name">.*</string>|<string name="app_name">TehranNG</string>|g' {} +
-
-        echo "Applying new Colors..."
         find V2rayNG -type f -name "colors.xml" -exec sed -i 's/<color name="colorPrimary">.*<\/color>/<color name="colorPrimary">#0A192F<\/color>/g' {} +
         find V2rayNG -type f -name "colors.xml" -exec sed -i 's/<color name="colorPrimaryDark">.*<\/color>/<color name="colorPrimaryDark">#020C1B<\/color>/g' {} +
         find V2rayNG -type f -name "colors.xml" -exec sed -i 's/<color name="colorAccent">.*<\/color>/<color name="colorAccent">#64FFDA<\/color>/g' {} +
 
-    # ۲. دانلود خودکار فایل هسته (libv2ray.aar)
     - name: Download libv2ray.aar
-      run: |
-        mkdir -p V2rayNG/app/libs
-        curl -L -o V2rayNG/app/libs/libv2ray.aar "https://sourceforge.net/projects/androidlibxraylite.mirror/files/v26.9.30/libv2ray.aar/download"
-        ls -lh V2rayNG/app/libs/
+      uses: robinraju/release-downloader@v1.12
+      with:
+        repository: '2dust/AndroidLibXrayLite'
+        fileName: 'libv2ray.aar'
+        out-file-path: 'V2rayNG/app/libs/'
 
-    # ۳. ساخت نهایی فایل APK
     - name: Build APK
       run: |
         cd V2rayNG
         chmod +x gradlew
         ./gradlew assembleDebug
 
-    # ۴. آپلود فایل نهایی برای دانلود شما
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
