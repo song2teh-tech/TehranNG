@@ -31,16 +31,24 @@ jobs:
     - name: Remove Duplicate WebP Icons
       run: find V2rayNG/app/src/main/res -name "ic_launcher.webp" -delete
 
-    # ✅ ۱. اصلاح هوشمندانه فایل TOML و فایل‌های Gradle
+    # ✅ ۱. دانلود مستقیم فایل AAR کتابخانه و تغییر وابستگی به فایل محلی
+    - name: Download RxPermissions AAR and Patch Gradle
+      run: |
+        # دانلود فایل AAR از یک مخزن پایدار (Mulesoft)
+        curl -L -o V2rayNG/app/libs/rxpermissions-0.10.2.aar "https://repository.mulesoft.org/nexus/content/repositories/public/com/github/tbruyelle/rxpermissions/0.10.2/rxpermissions-0.10.2.aar"
+        
+        # تغییر تعریف وابستگی در فایل‌های Gradle به فایل محلی
+        find V2rayNG -type f \( -name "*.gradle" -o -name "*.gradle.kts" \) -exec sed -i "s/implementation 'com.github.tbruyelle:rxpermissions:0.12'/implementation files('libs\/rxpermissions-0.10.2.aar')/g" {} +
+        find V2rayNG -type f \( -name "*.gradle" -o -name "*.gradle.kts" \) -exec sed -i 's/implementation("com.github.tbruyelle:rxpermissions:0.12")/implementation(files("libs\/rxpermissions-0.10.2.aar"))/g' {} +
+
+    # ✅ ۲. اصلاح فایل‌های TOML و Gradle برای جلوگیری از خطاهای بعدی
     - name: Fix RxPermissions Alias and JitPack
       run: |
-        # ۱-۱. اصلاح فایل TOML: نام علیت باید با حروف کوچک باشد
+        # اصلاح فایل TOML: نام علیت باید با حروف کوچک باشد
         find V2rayNG -name "libs.versions.toml" -exec sed -i 's/RxPermissions/rxpermissions/g' {} +
-        
-        # ۱-۲. اصلاح فایل‌های Gradle: نام کتابخانه باید با حروف بزرگ (برای JitPack) باشد
+        # اصلاح فایل‌های Gradle: نام کتابخانه باید با حروف بزرگ (برای JitPack) باشد
         find V2rayNG -type f \( -name "*.gradle" -o -name "*.gradle.kts" \) -exec sed -i 's/com\.github\.tbruyelle:rxpermissions:/com.github.tbruyelle:RxPermissions:/g' {} +
-        
-        # ۱-۳. تزریق مخزن JitPack به فایل settings.gradle.kts
+        # تزریق مخزن JitPack به فایل settings.gradle.kts
         find V2rayNG -name "settings.gradle.kts" -exec perl -0pi -e 's/(repositories\s*\{)/$1\n        maven { url = uri("https:\/\/jitpack.io") }/g' {} +
 
     - name: Auto Fix and Customize Code
