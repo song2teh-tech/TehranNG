@@ -31,6 +31,18 @@ jobs:
     - name: Remove Duplicate WebP Icons
       run: find V2rayNG/app/src/main/res -name "ic_launcher.webp" -delete
 
+    # ✅ ۱. اصلاح هوشمندانه فایل TOML و فایل‌های Gradle
+    - name: Fix RxPermissions Alias and JitPack
+      run: |
+        # ۱-۱. اصلاح فایل TOML: نام علیت باید با حروف کوچک باشد
+        find V2rayNG -name "libs.versions.toml" -exec sed -i 's/RxPermissions/rxpermissions/g' {} +
+        
+        # ۱-۲. اصلاح فایل‌های Gradle: نام کتابخانه باید با حروف بزرگ (برای JitPack) باشد
+        find V2rayNG -type f \( -name "*.gradle" -o -name "*.gradle.kts" \) -exec sed -i 's/com\.github\.tbruyelle:rxpermissions:/com.github.tbruyelle:RxPermissions:/g' {} +
+        
+        # ۱-۳. تزریق مخزن JitPack به فایل settings.gradle.kts
+        find V2rayNG -name "settings.gradle.kts" -exec perl -0pi -e 's/(repositories\s*\{)/$1\n        maven { url = uri("https:\/\/jitpack.io") }/g' {} +
+
     - name: Auto Fix and Customize Code
       run: |
         find V2rayNG -type f -name "strings.xml" -exec sed -i 's|<string name="app_name">.*</string>|<string name="app_name">TehranNG</string>|g' {} +
@@ -38,13 +50,6 @@ jobs:
         find V2rayNG -type f -name "colors.xml" -exec sed -i 's/<color name="colorPrimaryDark">.*<\/color>/<color name="colorPrimaryDark">#020C1B<\/color>/g' {} +
         find V2rayNG -type f -name "colors.xml" -exec sed -i 's/<color name="colorAccent">.*<\/color>/<color name="colorAccent">#64FFDA<\/color>/g' {} +
         find V2rayNG -type f -name "strings.xml" -exec perl -pi -e 's/%(?!%|\d+\$)/%%/g' {} +
-
-    # ✅ ۱. اصلاح نهایی و اجباری نام کتابخانه (حروف بزرگ) + اضافه کردن مخزن JitPack
-    - name: Fix JitPack and RxPermissions Case
-      run: |
-        find V2rayNG -name "settings.gradle.kts" -exec perl -0pi -e 's/(repositories\s*\{)/$1\n        maven { url = uri("https:\/\/jitpack.io") }/g' {} +
-        find V2rayNG -type f \( -name "*.gradle" -o -name "*.gradle.kts" -o -name "*.toml" \) -exec sed -i 's/com\.github\.tbruyelle:rxpermissions:/com.github.tbruyelle:RxPermissions:/g' {} +
-        find V2rayNG -type f \( -name "*.gradle" -o -name "*.gradle.kts" -o -name "*.toml" \) -exec sed -i 's/rxpermissions = "0.12"/RxPermissions = "0.12"/g' {} +
 
     - name: Enable AndroidX and Jetifier
       run: |
@@ -58,7 +63,6 @@ jobs:
         FILE_SIZE=$(stat -c%s "V2rayNG/app/libs/libv2ray.aar")
         if [ "$FILE_SIZE" -lt 1000000 ]; then echo "Error: file too small"; exit 1; fi
 
-    # ✅ ۲. پاکسازی کش و ساخت بدون Daemon برای جلوگیری از خطاهای تکراری
     - name: Build APK
       run: |
         cd V2rayNG
